@@ -1,0 +1,1003 @@
+;#include <mega32.h>
+;PCODE: $00000000 VOL: 0
+	#ifndef __SLEEP_DEFINED__
+;PCODE: $00000001 VOL: 0
+	#define __SLEEP_DEFINED__
+;PCODE: $00000002 VOL: 0
+	.EQU __se_bit=0x80
+;PCODE: $00000003 VOL: 0
+	.EQU __sm_mask=0x70
+;PCODE: $00000004 VOL: 0
+	.EQU __sm_powerdown=0x20
+;PCODE: $00000005 VOL: 0
+	.EQU __sm_powersave=0x30
+;PCODE: $00000006 VOL: 0
+	.EQU __sm_standby=0x60
+;PCODE: $00000007 VOL: 0
+	.EQU __sm_ext_standby=0x70
+;PCODE: $00000008 VOL: 0
+	.EQU __sm_adc_noise_red=0x10
+;PCODE: $00000009 VOL: 0
+	.SET power_ctrl_reg=mcucr
+;PCODE: $0000000A VOL: 0
+	#endif
+;PCODE: $0000000B VOL: 0
+;PCODE: $0000000C VOL: 0
+;
+;#define OFF 0
+;#define UP 1
+;#define DOWN 2
+;#define OPEN 1
+;#define CLOSE 2
+;
+;#define NOT_BLINKING 0
+;#define BLINKING 1
+;
+;unsigned char current_state = 3;
+;//0: door should open
+;//1: waiting before door close
+;//2: closing the door
+;//3: waiting for request
+;//4: moving to request
+;
+;unsigned char height_from_ground = 0;
+;unsigned char current_floor = 0;
+;unsigned char door_open_degree = 0; // 0: close 20:full open
+;unsigned char open_door_wait = 0;
+;
+;unsigned char inferared_trigered = 0;
+;unsigned char heavy_weight = 0;
+;unsigned char alarm = 0;
+;
+;unsigned char destination_heights[4] = {0, 10, 20, 30};
+
+	.DSEG
+;char destination_height = 30;
+;char destination_set = 0;
+;
+;unsigned char current_door_motor_mode = OFF;
+;unsigned char current_elevator_motor_mode = OFF;
+;unsigned char monitor_blinking = NOT_BLINKING;
+;unsigned char monitor_on = 1;
+;unsigned char blink_time = 0;
+;
+;unsigned char requested[4] = {0, 0, 0, 0};
+;unsigned char seg_code[4] = {0b00111111, 0b00000110, 0b01011011, 0b01001111};
+;
+;void read_inferared(){
+; 0000 0029 void read_inferared(){
+
+	.CSEG
+;PCODE: $0000000D VOL: 0
+;PCODE: $0000000E VOL: 0
+; 0000 002A     if (PINA.0 == 0){
+;PCODE: $0000000F VOL: 0
+;PCODE: $00000010 VOL: 0
+;PCODE: $00000011 VOL: 0
+; 0000 002B         inferared_trigered = 1;
+;PCODE: $00000012 VOL: 0
+;PCODE: $00000013 VOL: 0
+; 0000 002C     }
+; 0000 002D }
+;PCODE: $00000014 VOL: 0
+;PCODE: $00000015 VOL: 0
+;PCODE: $00000016 VOL: 0
+;
+;void read_alarm(){
+; 0000 002F void read_alarm(){
+;PCODE: $00000017 VOL: 0
+;PCODE: $00000018 VOL: 0
+; 0000 0030     if (PINA.1 == 0){
+;PCODE: $00000019 VOL: 0
+;PCODE: $0000001A VOL: 0
+;PCODE: $0000001B VOL: 0
+; 0000 0031         alarm = 1;
+;PCODE: $0000001C VOL: 0
+;PCODE: $0000001D VOL: 0
+; 0000 0032     }
+; 0000 0033 }
+;PCODE: $0000001E VOL: 0
+;PCODE: $0000001F VOL: 0
+;PCODE: $00000020 VOL: 0
+;
+;void read_heavyweight(){
+; 0000 0035 void read_heavyweight(){
+;PCODE: $00000021 VOL: 0
+;PCODE: $00000022 VOL: 0
+; 0000 0036     if (PINA.2 == 0){
+;PCODE: $00000023 VOL: 0
+;PCODE: $00000024 VOL: 0
+;PCODE: $00000025 VOL: 0
+; 0000 0037         heavy_weight = 1;
+;PCODE: $00000026 VOL: 0
+;PCODE: $00000027 VOL: 0
+; 0000 0038     }
+; 0000 0039 }
+;PCODE: $00000028 VOL: 0
+;PCODE: $00000029 VOL: 0
+;PCODE: $0000002A VOL: 0
+;
+;void read_buttons(){
+; 0000 003B void read_buttons(){
+;PCODE: $0000002B VOL: 0
+;PCODE: $0000002C VOL: 0
+; 0000 003C     if (PINC.0 == 0 || PINC.1 == 0 || PINC.2 == 0 || PINC.3 == 0){
+;PCODE: $0000002D VOL: 0
+;PCODE: $0000002E VOL: 0
+;PCODE: $0000002F VOL: 0
+;PCODE: $00000030 VOL: 0
+;PCODE: $00000031 VOL: 0
+;PCODE: $00000032 VOL: 0
+;PCODE: $00000033 VOL: 0
+;PCODE: $00000034 VOL: 0
+;PCODE: $00000035 VOL: 0
+;PCODE: $00000036 VOL: 0
+;PCODE: $00000037 VOL: 0
+;PCODE: $00000038 VOL: 0
+;PCODE: $00000039 VOL: 0
+;PCODE: $0000003A VOL: 0
+; 0000 003D         if (PINC.0 == 0){
+;PCODE: $0000003B VOL: 0
+;PCODE: $0000003C VOL: 0
+;PCODE: $0000003D VOL: 0
+; 0000 003E             requested[0] = 1;
+;PCODE: $0000003E VOL: 0
+;PCODE: $0000003F VOL: 0
+; 0000 003F         }
+; 0000 0040         if (PINC.1 == 0){
+;PCODE: $00000040 VOL: 0
+;PCODE: $00000041 VOL: 0
+;PCODE: $00000042 VOL: 0
+;PCODE: $00000043 VOL: 0
+; 0000 0041             requested[1] = 1;
+;PCODE: $00000044 VOL: 0
+;PCODE: $00000045 VOL: 0
+;PCODE: $00000046 VOL: 0
+; 0000 0042         }
+; 0000 0043         if (PINC.2 == 0){
+;PCODE: $00000047 VOL: 0
+;PCODE: $00000048 VOL: 0
+;PCODE: $00000049 VOL: 0
+;PCODE: $0000004A VOL: 0
+; 0000 0044             requested[2] = 1;
+;PCODE: $0000004B VOL: 0
+;PCODE: $0000004C VOL: 0
+;PCODE: $0000004D VOL: 0
+; 0000 0045         }
+; 0000 0046         if (PINC.3 == 0){
+;PCODE: $0000004E VOL: 0
+;PCODE: $0000004F VOL: 0
+;PCODE: $00000050 VOL: 0
+;PCODE: $00000051 VOL: 0
+; 0000 0047             requested[3] = 1;
+;PCODE: $00000052 VOL: 0
+;PCODE: $00000053 VOL: 0
+;PCODE: $00000054 VOL: 0
+; 0000 0048         }
+; 0000 0049     }
+;PCODE: $00000055 VOL: 0
+; 0000 004A     else {
+;PCODE: $00000056 VOL: 0
+;PCODE: $00000057 VOL: 0
+; 0000 004B         if (PINC.4 == 0){
+;PCODE: $00000058 VOL: 0
+;PCODE: $00000059 VOL: 0
+;PCODE: $0000005A VOL: 0
+; 0000 004C             requested[0] = 1;
+;PCODE: $0000005B VOL: 0
+;PCODE: $0000005C VOL: 0
+; 0000 004D         }
+; 0000 004E         if (PINC.5 == 0){
+;PCODE: $0000005D VOL: 0
+;PCODE: $0000005E VOL: 0
+;PCODE: $0000005F VOL: 0
+;PCODE: $00000060 VOL: 0
+; 0000 004F             requested[1] = 1;
+;PCODE: $00000061 VOL: 0
+;PCODE: $00000062 VOL: 0
+;PCODE: $00000063 VOL: 0
+; 0000 0050         }
+; 0000 0051         if (PINC.6 == 0){
+;PCODE: $00000064 VOL: 0
+;PCODE: $00000065 VOL: 0
+;PCODE: $00000066 VOL: 0
+;PCODE: $00000067 VOL: 0
+; 0000 0052             requested[2] = 1;
+;PCODE: $00000068 VOL: 0
+;PCODE: $00000069 VOL: 0
+;PCODE: $0000006A VOL: 0
+; 0000 0053         }
+; 0000 0054         if (PINC.7 == 0){
+;PCODE: $0000006B VOL: 0
+;PCODE: $0000006C VOL: 0
+;PCODE: $0000006D VOL: 0
+;PCODE: $0000006E VOL: 0
+; 0000 0055             requested[3] = 1;
+;PCODE: $0000006F VOL: 0
+;PCODE: $00000070 VOL: 0
+;PCODE: $00000071 VOL: 0
+; 0000 0056         }
+; 0000 0057     }
+;PCODE: $00000072 VOL: 0
+;PCODE: $00000073 VOL: 0
+; 0000 0058 }
+;PCODE: $00000074 VOL: 0
+;PCODE: $00000075 VOL: 0
+;
+;void elevator_motor(int mode){
+; 0000 005A void elevator_motor(int mode){
+;PCODE: $00000076 VOL: 0
+;PCODE: $00000077 VOL: 0
+; 0000 005B     unsigned char a;
+; 0000 005C     unsigned char b;
+; 0000 005D     if (mode == OFF){
+;PCODE: $00000078 VOL: 0
+;PCODE: $00000079 VOL: 0
+;PCODE: $0000007A VOL: 0
+;	mode -> Y+2
+;	a -> R17
+;	b -> R16
+;PCODE: $0000007B VOL: 0
+;PCODE: $0000007C VOL: 0
+;PCODE: $0000007D VOL: 0
+; 0000 005E         a = 0;
+;PCODE: $0000007E VOL: 0
+;PCODE: $0000007F VOL: 0
+; 0000 005F         b = 0;
+;PCODE: $00000080 VOL: 0
+;PCODE: $00000081 VOL: 0
+; 0000 0060     }
+; 0000 0061     else{
+;PCODE: $00000082 VOL: 0
+;PCODE: $00000083 VOL: 0
+; 0000 0062         if (mode == UP){
+;PCODE: $00000084 VOL: 0
+;PCODE: $00000085 VOL: 0
+;PCODE: $00000086 VOL: 0
+; 0000 0063             height_from_ground++;
+;PCODE: $00000087 VOL: 0
+; 0000 0064             a = 1;
+;PCODE: $00000088 VOL: 0
+;PCODE: $00000089 VOL: 0
+; 0000 0065             b = 0;
+;PCODE: $0000008A VOL: 0
+;PCODE: $0000008B VOL: 0
+; 0000 0066         }
+; 0000 0067         else{
+;PCODE: $0000008C VOL: 0
+;PCODE: $0000008D VOL: 0
+; 0000 0068              if (mode == DOWN){
+;PCODE: $0000008E VOL: 0
+;PCODE: $0000008F VOL: 0
+;PCODE: $00000090 VOL: 0
+; 0000 0069                 height_from_ground--;
+;PCODE: $00000091 VOL: 0
+; 0000 006A                 a = 0;
+;PCODE: $00000092 VOL: 0
+;PCODE: $00000093 VOL: 0
+; 0000 006B                 a = 1;
+;PCODE: $00000094 VOL: 0
+;PCODE: $00000095 VOL: 0
+; 0000 006C             }
+; 0000 006D         }
+;PCODE: $00000096 VOL: 0
+;PCODE: $00000097 VOL: 0
+; 0000 006E     }
+;PCODE: $00000098 VOL: 0
+; 0000 006F 
+; 0000 0070     if (current_elevator_motor_mode != mode){
+;PCODE: $00000099 VOL: 0
+;PCODE: $0000009A VOL: 0
+;PCODE: $0000009B VOL: 0
+;PCODE: $0000009C VOL: 0
+;PCODE: $0000009D VOL: 0
+; 0000 0071         PORTD.0 = a;
+;PCODE: $0000009E VOL: 0
+;PCODE: $0000009F VOL: 0
+;PCODE: $000000A0 VOL: 0
+;PCODE: $000000A1 VOL: 0
+;PCODE: $000000A2 VOL: 0
+;PCODE: $000000A3 VOL: 0
+;PCODE: $000000A4 VOL: 0
+;PCODE: $000000A5 VOL: 0
+;PCODE: $000000A6 VOL: 0
+; 0000 0072         PORTD.1 = b;
+;PCODE: $000000A7 VOL: 0
+;PCODE: $000000A8 VOL: 0
+;PCODE: $000000A9 VOL: 0
+;PCODE: $000000AA VOL: 0
+;PCODE: $000000AB VOL: 0
+;PCODE: $000000AC VOL: 0
+;PCODE: $000000AD VOL: 0
+;PCODE: $000000AE VOL: 0
+;PCODE: $000000AF VOL: 0
+; 0000 0073         current_elevator_motor_mode = mode;
+;PCODE: $000000B0 VOL: 0
+;PCODE: $000000B1 VOL: 0
+; 0000 0074     }
+; 0000 0075 }
+;PCODE: $000000B2 VOL: 0
+;PCODE: $000000B3 VOL: 0
+;PCODE: $000000B4 VOL: 0
+;PCODE: $000000B5 VOL: 0
+;PCODE: $000000B6 VOL: 0
+;PCODE: $000000B7 VOL: 0
+;PCODE: $000000B8 VOL: 0
+;PCODE: $000000B9 VOL: 0
+;
+;void door_motor(int mode){
+; 0000 0077 void door_motor(int mode){
+;PCODE: $000000BA VOL: 0
+;PCODE: $000000BB VOL: 0
+; 0000 0078     unsigned char a;
+; 0000 0079     unsigned char b;
+; 0000 007A     if (mode == OFF){
+;PCODE: $000000BC VOL: 0
+;PCODE: $000000BD VOL: 0
+;PCODE: $000000BE VOL: 0
+;	mode -> Y+2
+;	a -> R17
+;	b -> R16
+;PCODE: $000000BF VOL: 0
+;PCODE: $000000C0 VOL: 0
+;PCODE: $000000C1 VOL: 0
+; 0000 007B         a = 0;
+;PCODE: $000000C2 VOL: 0
+;PCODE: $000000C3 VOL: 0
+; 0000 007C         b = 0;
+;PCODE: $000000C4 VOL: 0
+;PCODE: $000000C5 VOL: 0
+; 0000 007D     }
+; 0000 007E     else{
+;PCODE: $000000C6 VOL: 0
+;PCODE: $000000C7 VOL: 0
+; 0000 007F          if (mode == OPEN){
+;PCODE: $000000C8 VOL: 0
+;PCODE: $000000C9 VOL: 0
+;PCODE: $000000CA VOL: 0
+; 0000 0080             door_open_degree++;
+;PCODE: $000000CB VOL: 0
+; 0000 0081             a = 1;
+;PCODE: $000000CC VOL: 0
+;PCODE: $000000CD VOL: 0
+; 0000 0082             b = 0;
+;PCODE: $000000CE VOL: 0
+;PCODE: $000000CF VOL: 0
+; 0000 0083         }
+; 0000 0084         else {
+;PCODE: $000000D0 VOL: 0
+;PCODE: $000000D1 VOL: 0
+; 0000 0085                 if (mode == CLOSE){
+;PCODE: $000000D2 VOL: 0
+;PCODE: $000000D3 VOL: 0
+;PCODE: $000000D4 VOL: 0
+; 0000 0086                 door_open_degree--;
+;PCODE: $000000D5 VOL: 0
+; 0000 0087                 a = 0;
+;PCODE: $000000D6 VOL: 0
+;PCODE: $000000D7 VOL: 0
+; 0000 0088                 b = 1;
+;PCODE: $000000D8 VOL: 0
+;PCODE: $000000D9 VOL: 0
+; 0000 0089             }
+; 0000 008A         }
+;PCODE: $000000DA VOL: 0
+;PCODE: $000000DB VOL: 0
+; 0000 008B     }
+;PCODE: $000000DC VOL: 0
+; 0000 008C 
+; 0000 008D     if (current_door_motor_mode != mode){
+;PCODE: $000000DD VOL: 0
+;PCODE: $000000DE VOL: 0
+;PCODE: $000000DF VOL: 0
+;PCODE: $000000E0 VOL: 0
+;PCODE: $000000E1 VOL: 0
+; 0000 008E         PORTD.2 = a;
+;PCODE: $000000E2 VOL: 0
+;PCODE: $000000E3 VOL: 0
+;PCODE: $000000E4 VOL: 0
+;PCODE: $000000E5 VOL: 0
+;PCODE: $000000E6 VOL: 0
+;PCODE: $000000E7 VOL: 0
+;PCODE: $000000E8 VOL: 0
+;PCODE: $000000E9 VOL: 0
+;PCODE: $000000EA VOL: 0
+; 0000 008F         PORTD.3 = b;
+;PCODE: $000000EB VOL: 0
+;PCODE: $000000EC VOL: 0
+;PCODE: $000000ED VOL: 0
+;PCODE: $000000EE VOL: 0
+;PCODE: $000000EF VOL: 0
+;PCODE: $000000F0 VOL: 0
+;PCODE: $000000F1 VOL: 0
+;PCODE: $000000F2 VOL: 0
+;PCODE: $000000F3 VOL: 0
+; 0000 0090         current_door_motor_mode = mode;
+;PCODE: $000000F4 VOL: 0
+;PCODE: $000000F5 VOL: 0
+; 0000 0091     }
+; 0000 0092 }
+;PCODE: $000000F6 VOL: 0
+;PCODE: $000000F7 VOL: 0
+;PCODE: $000000F8 VOL: 0
+;PCODE: $000000F9 VOL: 0
+;PCODE: $000000FA VOL: 0
+;PCODE: $000000FB VOL: 0
+;PCODE: $000000FC VOL: 0
+;PCODE: $000000FD VOL: 0
+;
+;void update_seven_segment(){
+; 0000 0094 void update_seven_segment(){
+;PCODE: $000000FE VOL: 0
+;PCODE: $000000FF VOL: 0
+; 0000 0095     if (monitor_blinking == NOT_BLINKING){
+;PCODE: $00000100 VOL: 0
+;PCODE: $00000101 VOL: 0
+;PCODE: $00000102 VOL: 0
+; 0000 0096         monitor_on = 1;
+;PCODE: $00000103 VOL: 0
+;PCODE: $00000104 VOL: 0
+; 0000 0097         blink_time = 0;
+;PCODE: $00000105 VOL: 0
+;PCODE: $00000106 VOL: 0
+; 0000 0098     }
+; 0000 0099     else{
+;PCODE: $00000107 VOL: 0
+;PCODE: $00000108 VOL: 0
+; 0000 009A         if (blink_time == 3){
+;PCODE: $00000109 VOL: 0
+;PCODE: $0000010A VOL: 0
+;PCODE: $0000010B VOL: 0
+; 0000 009B             blink_time = 0;
+;PCODE: $0000010C VOL: 0
+;PCODE: $0000010D VOL: 0
+; 0000 009C             monitor_on = !monitor_on;
+;PCODE: $0000010E VOL: 0
+;PCODE: $0000010F VOL: 0
+;PCODE: $00000110 VOL: 0
+; 0000 009D         }
+; 0000 009E         else {
+;PCODE: $00000111 VOL: 0
+;PCODE: $00000112 VOL: 0
+; 0000 009F             blink_time++;
+;PCODE: $00000113 VOL: 0
+;PCODE: $00000114 VOL: 0
+;PCODE: $00000115 VOL: 0
+; 0000 00A0         }
+;PCODE: $00000116 VOL: 0
+; 0000 00A1     }
+;PCODE: $00000117 VOL: 0
+; 0000 00A2 
+; 0000 00A3 
+; 0000 00A4     if (monitor_on){
+;PCODE: $00000118 VOL: 0
+;PCODE: $00000119 VOL: 0
+;PCODE: $0000011A VOL: 0
+; 0000 00A5         PORTB = seg_code[current_floor];
+;PCODE: $0000011B VOL: 0
+;PCODE: $0000011C VOL: 0
+;PCODE: $0000011D VOL: 0
+;PCODE: $0000011E VOL: 0
+;PCODE: $0000011F VOL: 0
+; 0000 00A6     }
+; 0000 00A7     else{
+;PCODE: $00000120 VOL: 0
+;PCODE: $00000121 VOL: 0
+; 0000 00A8         PORTB = 0x00;
+;PCODE: $00000122 VOL: 0
+;PCODE: $00000123 VOL: 0
+; 0000 00A9     }
+;PCODE: $00000124 VOL: 0
+; 0000 00AA }
+;PCODE: $00000125 VOL: 0
+;PCODE: $00000126 VOL: 0
+;
+;// do
+;void set_destination(){
+; 0000 00AD void set_destination(){
+;PCODE: $00000127 VOL: 0
+;PCODE: $00000128 VOL: 0
+; 0000 00AE     signed int i_best;
+; 0000 00AF     signed int d = 1000;
+; 0000 00B0     signed int dtemp;
+; 0000 00B1     signed int found = 0;
+; 0000 00B2 
+; 0000 00B3     unsigned char i;
+; 0000 00B4     for (i=0; i<4; i++){
+;PCODE: $00000129 VOL: 0
+;PCODE: $0000012A VOL: 0
+;PCODE: $0000012B VOL: 0
+;PCODE: $0000012C VOL: 0
+;PCODE: $0000012D VOL: 0
+;PCODE: $0000012E VOL: 0
+;	i_best -> R16,R17
+;	d -> R18,R19
+;	dtemp -> R20,R21
+;	found -> Y+7
+;	i -> Y+6
+;PCODE: $0000012F VOL: 0
+;PCODE: $00000130 VOL: 0
+;PCODE: $00000131 VOL: 0
+;PCODE: $00000132 VOL: 0
+;PCODE: $00000133 VOL: 0
+;PCODE: $00000134 VOL: 0
+;PCODE: $00000135 VOL: 0
+;PCODE: $00000136 VOL: 0
+;PCODE: $00000137 VOL: 0
+;PCODE: $00000138 VOL: 0
+;PCODE: $00000139 VOL: 0
+;PCODE: $0000013A VOL: 0
+; 0000 00B5         if (requested[i]){
+;PCODE: $0000013B VOL: 0
+;PCODE: $0000013C VOL: 0
+;PCODE: $0000013D VOL: 0
+;PCODE: $0000013E VOL: 0
+;PCODE: $0000013F VOL: 0
+;PCODE: $00000140 VOL: 0
+; 0000 00B6             if (height_from_ground < destination_heights[i]){
+;PCODE: $00000141 VOL: 0
+;PCODE: $00000142 VOL: 0
+;PCODE: $00000143 VOL: 0
+;PCODE: $00000144 VOL: 0
+;PCODE: $00000145 VOL: 0
+;PCODE: $00000146 VOL: 0
+; 0000 00B7                 dtemp = destination_heights[i] - height_from_ground;
+;PCODE: $00000147 VOL: 0
+;PCODE: $00000148 VOL: 0
+;PCODE: $00000149 VOL: 0
+;PCODE: $0000014A VOL: 0
+;PCODE: $0000014B VOL: 0
+;PCODE: $0000014C VOL: 0
+;PCODE: $0000014D VOL: 0
+;PCODE: $0000014E VOL: 0
+;PCODE: $0000014F VOL: 0
+; 0000 00B8             }
+; 0000 00B9             else {
+;PCODE: $00000150 VOL: 0
+;PCODE: $00000151 VOL: 0
+; 0000 00BA                 dtemp = height_from_ground - destination_heights[i];
+;PCODE: $00000152 VOL: 0
+;PCODE: $00000153 VOL: 0
+;PCODE: $00000154 VOL: 0
+;PCODE: $00000155 VOL: 0
+;PCODE: $00000156 VOL: 0
+;PCODE: $00000157 VOL: 0
+;PCODE: $00000158 VOL: 0
+;PCODE: $00000159 VOL: 0
+;PCODE: $0000015A VOL: 0
+; 0000 00BB             }
+;PCODE: $0000015B VOL: 0
+; 0000 00BC 
+; 0000 00BD             if (dtemp < d){
+;PCODE: $0000015C VOL: 0
+;PCODE: $0000015D VOL: 0
+;PCODE: $0000015E VOL: 0
+; 0000 00BE                 found = 1;
+;PCODE: $0000015F VOL: 0
+;PCODE: $00000160 VOL: 0
+; 0000 00BF                 i_best = i;
+;PCODE: $00000161 VOL: 0
+;PCODE: $00000162 VOL: 0
+;PCODE: $00000163 VOL: 0
+; 0000 00C0                 d = dtemp;
+;PCODE: $00000164 VOL: 0
+;PCODE: $00000165 VOL: 0
+; 0000 00C1             }
+; 0000 00C2         }
+;PCODE: $00000166 VOL: 0
+; 0000 00C3     }
+;PCODE: $00000167 VOL: 0
+;PCODE: $00000168 VOL: 0
+;PCODE: $00000169 VOL: 0
+;PCODE: $0000016A VOL: 0
+;PCODE: $0000016B VOL: 0
+;PCODE: $0000016C VOL: 0
+;PCODE: $0000016D VOL: 0
+; 0000 00C4     if (found == 1){
+;PCODE: $0000016E VOL: 0
+;PCODE: $0000016F VOL: 0
+;PCODE: $00000170 VOL: 0
+; 0000 00C5         destination_height = destination_heights[i_best];
+;PCODE: $00000171 VOL: 0
+;PCODE: $00000172 VOL: 0
+;PCODE: $00000173 VOL: 0
+; 0000 00C6         destination_set = 1;
+;PCODE: $00000174 VOL: 0
+;PCODE: $00000175 VOL: 0
+; 0000 00C7         return;
+;PCODE: $00000176 VOL: 0
+;PCODE: $00000177 VOL: 0
+;PCODE: $00000178 VOL: 0
+; 0000 00C8     }
+; 0000 00C9 }
+;PCODE: $00000179 VOL: 0
+;PCODE: $0000017A VOL: 0
+;PCODE: $0000017B VOL: 0
+;PCODE: $0000017C VOL: 0
+;PCODE: $0000017D VOL: 0
+;
+;unsigned char closest_floor_height(){
+; 0000 00CB unsigned char closest_floor_height(){
+;PCODE: $0000017E VOL: 0
+;PCODE: $0000017F VOL: 0
+; 0000 00CC     unsigned char result = (height_from_ground / 10)*10;
+; 0000 00CD     if (height_from_ground < destination_height){
+;PCODE: $00000180 VOL: 0
+;	result -> R17
+;PCODE: $00000181 VOL: 0
+;PCODE: $00000182 VOL: 0
+;PCODE: $00000183 VOL: 0
+;PCODE: $00000184 VOL: 0
+;PCODE: $00000185 VOL: 0
+;PCODE: $00000186 VOL: 0
+;PCODE: $00000187 VOL: 0
+;PCODE: $00000188 VOL: 0
+;PCODE: $00000189 VOL: 0
+;PCODE: $0000018A VOL: 0
+; 0000 00CE         result += 10;
+;PCODE: $0000018B VOL: 0
+;PCODE: $0000018C VOL: 0
+; 0000 00CF     }
+; 0000 00D0     return result;
+;PCODE: $0000018D VOL: 0
+;PCODE: $0000018E VOL: 0
+;PCODE: $0000018F VOL: 0
+;PCODE: $00000190 VOL: 0
+; 0000 00D1 }
+;PCODE: $00000191 VOL: 0
+;
+;void time_interupt(){
+; 0000 00D3 void time_interupt(){
+;PCODE: $00000192 VOL: 0
+;PCODE: $00000193 VOL: 0
+; 0000 00D4     update_seven_segment();
+;PCODE: $00000194 VOL: 0
+; 0000 00D5 
+; 0000 00D6     // door opening
+; 0000 00D7     if (current_state == 0){
+;PCODE: $00000195 VOL: 0
+;PCODE: $00000196 VOL: 0
+; 0000 00D8         monitor_blinking = BLINKING;
+;PCODE: $00000197 VOL: 0
+;PCODE: $00000198 VOL: 0
+; 0000 00D9         if (door_open_degree < 20){
+;PCODE: $00000199 VOL: 0
+;PCODE: $0000019A VOL: 0
+;PCODE: $0000019B VOL: 0
+; 0000 00DA             door_motor(OPEN);
+;PCODE: $0000019C VOL: 0
+;PCODE: $0000019D VOL: 0
+;PCODE: $0000019E VOL: 0
+; 0000 00DB         }
+; 0000 00DC         else{
+;PCODE: $0000019F VOL: 0
+;PCODE: $000001A0 VOL: 0
+; 0000 00DD             door_motor(OFF);
+;PCODE: $000001A1 VOL: 0
+;PCODE: $000001A2 VOL: 0
+;PCODE: $000001A3 VOL: 0
+; 0000 00DE             open_door_wait = 10;
+;PCODE: $000001A4 VOL: 0
+;PCODE: $000001A5 VOL: 0
+; 0000 00DF             current_state = 1;
+;PCODE: $000001A6 VOL: 0
+;PCODE: $000001A7 VOL: 0
+; 0000 00E0         }
+;PCODE: $000001A8 VOL: 0
+; 0000 00E1         return;
+;PCODE: $000001A9 VOL: 0
+; 0000 00E2     }
+; 0000 00E3 
+; 0000 00E4     // waiting door opened
+; 0000 00E5     if (current_state == 1){
+;PCODE: $000001AA VOL: 0
+;PCODE: $000001AB VOL: 0
+;PCODE: $000001AC VOL: 0
+;PCODE: $000001AD VOL: 0
+; 0000 00E6         if (open_door_wait > 0){
+;PCODE: $000001AE VOL: 0
+;PCODE: $000001AF VOL: 0
+;PCODE: $000001B0 VOL: 0
+; 0000 00E7             open_door_wait--;
+;PCODE: $000001B1 VOL: 0
+; 0000 00E8         }
+; 0000 00E9         else{
+;PCODE: $000001B2 VOL: 0
+;PCODE: $000001B3 VOL: 0
+; 0000 00EA             current_state = 2;
+;PCODE: $000001B4 VOL: 0
+;PCODE: $000001B5 VOL: 0
+; 0000 00EB         }
+;PCODE: $000001B6 VOL: 0
+; 0000 00EC         return;
+;PCODE: $000001B7 VOL: 0
+; 0000 00ED     }
+; 0000 00EE 
+; 0000 00EF     // door closing
+; 0000 00F0     if (current_state == 2){
+;PCODE: $000001B8 VOL: 0
+;PCODE: $000001B9 VOL: 0
+;PCODE: $000001BA VOL: 0
+;PCODE: $000001BB VOL: 0
+; 0000 00F1         read_inferared();
+;PCODE: $000001BC VOL: 0
+; 0000 00F2         if (inferared_trigered == 1){
+;PCODE: $000001BD VOL: 0
+;PCODE: $000001BE VOL: 0
+;PCODE: $000001BF VOL: 0
+; 0000 00F3             inferared_trigered = 0;
+;PCODE: $000001C0 VOL: 0
+; 0000 00F4             current_state = 0;
+;PCODE: $000001C1 VOL: 0
+; 0000 00F5         }
+; 0000 00F6         else {
+;PCODE: $000001C2 VOL: 0
+;PCODE: $000001C3 VOL: 0
+; 0000 00F7             if(door_open_degree > 0){
+;PCODE: $000001C4 VOL: 0
+;PCODE: $000001C5 VOL: 0
+;PCODE: $000001C6 VOL: 0
+; 0000 00F8                 door_motor(CLOSE);
+;PCODE: $000001C7 VOL: 0
+;PCODE: $000001C8 VOL: 0
+;PCODE: $000001C9 VOL: 0
+; 0000 00F9             }
+; 0000 00FA             else {
+;PCODE: $000001CA VOL: 0
+;PCODE: $000001CB VOL: 0
+; 0000 00FB                 door_motor(OFF);
+;PCODE: $000001CC VOL: 0
+;PCODE: $000001CD VOL: 0
+;PCODE: $000001CE VOL: 0
+; 0000 00FC                 current_state = 3;
+;PCODE: $000001CF VOL: 0
+;PCODE: $000001D0 VOL: 0
+; 0000 00FD             }
+;PCODE: $000001D1 VOL: 0
+; 0000 00FE         }
+;PCODE: $000001D2 VOL: 0
+; 0000 00FF         return;
+;PCODE: $000001D3 VOL: 0
+; 0000 0100     }
+; 0000 0101 
+; 0000 0102     // choosing next destination
+; 0000 0103     if (current_state == 3){
+;PCODE: $000001D4 VOL: 0
+;PCODE: $000001D5 VOL: 0
+;PCODE: $000001D6 VOL: 0
+;PCODE: $000001D7 VOL: 0
+; 0000 0104         read_alarm();
+;PCODE: $000001D8 VOL: 0
+; 0000 0105         read_heavyweight();
+;PCODE: $000001D9 VOL: 0
+; 0000 0106         monitor_blinking = NOT_BLINKING;
+;PCODE: $000001DA VOL: 0
+;PCODE: $000001DB VOL: 0
+; 0000 0107         if (alarm == 1 || heavy_weight == 1){
+;PCODE: $000001DC VOL: 0
+;PCODE: $000001DD VOL: 0
+;PCODE: $000001DE VOL: 0
+;PCODE: $000001DF VOL: 0
+;PCODE: $000001E0 VOL: 0
+;PCODE: $000001E1 VOL: 0
+;PCODE: $000001E2 VOL: 0
+;PCODE: $000001E3 VOL: 0
+; 0000 0108             destination_height = height_from_ground;
+;PCODE: $000001E4 VOL: 0
+;PCODE: $000001E5 VOL: 0
+; 0000 0109             destination_set = 1;
+;PCODE: $000001E6 VOL: 0
+;PCODE: $000001E7 VOL: 0
+; 0000 010A             current_state = 4;
+;PCODE: $000001E8 VOL: 0
+;PCODE: $000001E9 VOL: 0
+; 0000 010B         }
+; 0000 010C         else {
+;PCODE: $000001EA VOL: 0
+;PCODE: $000001EB VOL: 0
+; 0000 010D             if (!destination_set){
+;PCODE: $000001EC VOL: 0
+;PCODE: $000001ED VOL: 0
+; 0000 010E                 read_buttons();
+;PCODE: $000001EE VOL: 0
+; 0000 010F                 set_destination();
+;PCODE: $000001EF VOL: 0
+; 0000 0110                 current_state = 3;
+;PCODE: $000001F0 VOL: 0
+;PCODE: $000001F1 VOL: 0
+; 0000 0111             }
+; 0000 0112             else{
+;PCODE: $000001F2 VOL: 0
+;PCODE: $000001F3 VOL: 0
+; 0000 0113                 current_state = 4;
+;PCODE: $000001F4 VOL: 0
+;PCODE: $000001F5 VOL: 0
+; 0000 0114             }
+;PCODE: $000001F6 VOL: 0
+; 0000 0115         }
+;PCODE: $000001F7 VOL: 0
+; 0000 0116         return;
+;PCODE: $000001F8 VOL: 0
+; 0000 0117     }
+; 0000 0118 
+; 0000 0119     // moving to next destination
+; 0000 011A     if (current_state == 4){
+;PCODE: $000001F9 VOL: 0
+;PCODE: $000001FA VOL: 0
+;PCODE: $000001FB VOL: 0
+;PCODE: $000001FC VOL: 0
+; 0000 011B         read_alarm();
+;PCODE: $000001FD VOL: 0
+; 0000 011C         read_heavyweight();
+;PCODE: $000001FE VOL: 0
+; 0000 011D         // update current floor
+; 0000 011E         if (height_from_ground % 10 == 0){
+;PCODE: $000001FF VOL: 0
+;PCODE: $00000200 VOL: 0
+;PCODE: $00000201 VOL: 0
+;PCODE: $00000202 VOL: 0
+;PCODE: $00000203 VOL: 0
+;PCODE: $00000204 VOL: 0
+; 0000 011F             current_floor = height_from_ground / 10;
+;PCODE: $00000205 VOL: 0
+;PCODE: $00000206 VOL: 0
+;PCODE: $00000207 VOL: 0
+;PCODE: $00000208 VOL: 0
+;PCODE: $00000209 VOL: 0
+; 0000 0120         }
+; 0000 0121 
+; 0000 0122         if (heavy_weight == 1){
+;PCODE: $0000020A VOL: 0
+;PCODE: $0000020B VOL: 0
+;PCODE: $0000020C VOL: 0
+;PCODE: $0000020D VOL: 0
+; 0000 0123             heavy_weight = 0;
+;PCODE: $0000020E VOL: 0
+; 0000 0124             alarm = 1;
+;PCODE: $0000020F VOL: 0
+;PCODE: $00000210 VOL: 0
+; 0000 0125         }
+; 0000 0126 
+; 0000 0127         if (alarm == 1){
+;PCODE: $00000211 VOL: 0
+;PCODE: $00000212 VOL: 0
+;PCODE: $00000213 VOL: 0
+;PCODE: $00000214 VOL: 0
+; 0000 0128             destination_height = closest_floor_height();
+;PCODE: $00000215 VOL: 0
+;PCODE: $00000216 VOL: 0
+; 0000 0129             alarm = 0;
+;PCODE: $00000217 VOL: 0
+; 0000 012A         }
+; 0000 012B 
+; 0000 012C         if (height_from_ground < destination_height){
+;PCODE: $00000218 VOL: 0
+;PCODE: $00000219 VOL: 0
+;PCODE: $0000021A VOL: 0
+;PCODE: $0000021B VOL: 0
+; 0000 012D             elevator_motor(UP);
+;PCODE: $0000021C VOL: 0
+;PCODE: $0000021D VOL: 0
+;PCODE: $0000021E VOL: 0
+; 0000 012E         }
+; 0000 012F         else{
+;PCODE: $0000021F VOL: 0
+;PCODE: $00000220 VOL: 0
+; 0000 0130              if (height_from_ground > destination_height){
+;PCODE: $00000221 VOL: 0
+;PCODE: $00000222 VOL: 0
+;PCODE: $00000223 VOL: 0
+; 0000 0131                 elevator_motor(DOWN);
+;PCODE: $00000224 VOL: 0
+;PCODE: $00000225 VOL: 0
+;PCODE: $00000226 VOL: 0
+; 0000 0132             }
+; 0000 0133             else {
+;PCODE: $00000227 VOL: 0
+;PCODE: $00000228 VOL: 0
+; 0000 0134                 elevator_motor(OFF);
+;PCODE: $00000229 VOL: 0
+;PCODE: $0000022A VOL: 0
+;PCODE: $0000022B VOL: 0
+; 0000 0135                 requested[height_from_ground/10] = 0;// removing request
+;PCODE: $0000022C VOL: 0
+;PCODE: $0000022D VOL: 0
+;PCODE: $0000022E VOL: 0
+;PCODE: $0000022F VOL: 0
+;PCODE: $00000230 VOL: 0
+;PCODE: $00000231 VOL: 0
+;PCODE: $00000232 VOL: 0
+; 0000 0136                 destination_set = 0;// removing destination
+;PCODE: $00000233 VOL: 0
+; 0000 0137                 current_state = 0;
+;PCODE: $00000234 VOL: 0
+; 0000 0138             }
+;PCODE: $00000235 VOL: 0
+; 0000 0139         }
+;PCODE: $00000236 VOL: 0
+; 0000 013A         return;
+;PCODE: $00000237 VOL: 0
+; 0000 013B     }
+; 0000 013C }
+;PCODE: $00000238 VOL: 0
+;PCODE: $00000239 VOL: 0
+;PCODE: $0000023A VOL: 0
+;
+;
+;interrupt [TIM0_OVF] void timer0_ovf_isr(void){
+; 0000 013F interrupt [12] void timer0_ovf_isr(void){
+;PCODE: $0000023B VOL: 0
+;PCODE: $0000023C VOL: 0
+; 0000 0140 // Reinitialize Timer 0 value
+; 0000 0141    TCNT0=0x9E;
+;PCODE: $0000023D VOL: 0
+;PCODE: $0000023E VOL: 0
+; 0000 0142    time_interupt();
+;PCODE: $0000023F VOL: 0
+; 0000 0143 }
+;PCODE: $00000240 VOL: 0
+;PCODE: $00000241 VOL: 0
+;PCODE: $00000242 VOL: 0
+;
+;
+;void main(void)
+; 0000 0147 {
+;PCODE: $00000243 VOL: 0
+; 0000 0148 DDRA=0x00;
+;PCODE: $00000244 VOL: 0
+;PCODE: $00000245 VOL: 0
+; 0000 0149 PORTA=0xff;
+;PCODE: $00000246 VOL: 0
+;PCODE: $00000247 VOL: 0
+; 0000 014A 
+; 0000 014B DDRB=0xff;
+;PCODE: $00000248 VOL: 0
+;PCODE: $00000249 VOL: 0
+; 0000 014C PORTB=(0<<PORTB7) | (0<<PORTB6) | (0<<PORTB5) | (0<<PORTB4) | (0<<PORTB3) | (0<<PORTB2) | (0<<PORTB1) | (0<<PORTB0);
+;PCODE: $0000024A VOL: 0
+;PCODE: $0000024B VOL: 0
+; 0000 014D 
+; 0000 014E DDRC=0x00;
+;PCODE: $0000024C VOL: 0
+;PCODE: $0000024D VOL: 0
+; 0000 014F PORTC=0xff;
+;PCODE: $0000024E VOL: 0
+;PCODE: $0000024F VOL: 0
+; 0000 0150 
+; 0000 0151 DDRD=0xff;
+;PCODE: $00000250 VOL: 0
+;PCODE: $00000251 VOL: 0
+; 0000 0152 PORTD=(0<<PORTD7) | (0<<PORTD6) | (0<<PORTD5) | (0<<PORTD4) | (0<<PORTD3) | (0<<PORTD2) | (0<<PORTD1) | (0<<PORTD0);
+;PCODE: $00000252 VOL: 0
+;PCODE: $00000253 VOL: 0
+; 0000 0153 
+; 0000 0154 TCCR0=(0<<WGM00) | (0<<COM01) | (0<<COM00) | (0<<WGM01) | (1<<CS02) | (0<<CS01) | (1<<CS00);
+;PCODE: $00000254 VOL: 0
+;PCODE: $00000255 VOL: 0
+; 0000 0155 TCNT0=0x9E;
+;PCODE: $00000256 VOL: 0
+;PCODE: $00000257 VOL: 0
+; 0000 0156 OCR0=0x00;
+;PCODE: $00000258 VOL: 0
+;PCODE: $00000259 VOL: 0
+; 0000 0157 
+; 0000 0158 // Timer(s)/Counter(s) Interrupt(s) initialization
+; 0000 0159 TIMSK=(0<<OCIE2) | (0<<TOIE2) | (0<<TICIE1) | (0<<OCIE1A) | (0<<OCIE1B) | (0<<TOIE1) | (0<<OCIE0) | (1<<TOIE0);
+;PCODE: $0000025A VOL: 0
+;PCODE: $0000025B VOL: 0
+; 0000 015A 
+; 0000 015B // Global enable interrupts
+; 0000 015C #asm("sei")
+;PCODE: $0000025C VOL: 0
+	sei
+;PCODE: $0000025D VOL: 0
+; 0000 015D 
+; 0000 015E while (1){
+;PCODE: $0000025E VOL: 0
+; 0000 015F }
+;PCODE: $0000025F VOL: 0
+;PCODE: $00000260 VOL: 0
+; 0000 0160 }
+;PCODE: $00000261 VOL: 0
+;PCODE: $00000262 VOL: 0
+;PCODE: $00000263 VOL: 0

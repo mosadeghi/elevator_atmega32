@@ -1,0 +1,45 @@
+RAM Allocation [bytes]
+Variable                                                                          Address   Size
+------------------------------------------------------------------------------------------------
+destination_heights                                                               0x0260       4
+current_door_motor_mode                                                           0x0264       1
+current_elevator_motor_mode                                                       0x0265       1
+monitor_blinking                                                                  0x0266       1
+monitor_on                                                                        0x0267       1
+blink_time                                                                        0x0268       1
+requested                                                                         0x0269       4
+seg_code                                                                          0x026D       4
+
+EEPROM Allocation [bytes]
+Variable                                                                          Address   Size
+------------------------------------------------------------------------------------------------
+
+Register Allocation
+Variable                                                                          Register  Size
+------------------------------------------------------------------------------------------------
+current_state                                                                     R5           1
+height_from_ground                                                                R4           1
+current_floor                                                                     R7           1
+door_open_degree                                                                  R6           1
+open_door_wait                                                                    R9           1
+inferared_trigered                                                                R8           1
+heavy_weight                                                                      R11          1
+alarm                                                                             R10          1
+destination_height                                                                R13          1
+destination_set                                                                   R12          1
+
+FLASH Allocation [words]
+Function                                                                          Address   Size
+------------------------------------------------------------------------------------------------
+read_inferared                                                                    0x0006E      5
+read_alarm                                                                        0x00073      5
+read_heavyweight                                                                  0x00078      5
+read_buttons                                                                      0x0007D     50
+elevator_motor                                                                    0x000AF     42
+door_motor                                                                        0x000D9     45
+update_seven_segment                                                              0x00106     41
+set_destination                                                                   0x0012F     65
+closest_floor_height                                                              0x00170     12
+time_interupt                                                                     0x0017C    131
+timer0_ovf_isr                                                                    0x001FF     30
+main                                                                              0x0021D     24
