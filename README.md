@@ -1,6 +1,6 @@
 # elevator_atmega32
 just a simple elevator controller circuit (atmega32, C lang)
-
+english description maybe added but not right now :( sorry :D
 ## یادداشت
 به پیشنهاد چندتا از دوستانم وسواس رو کنار گذاشتم و میخوام یه سری از پروژه های دانشگاهیم رو اینجا بذارم که اینقدر خالی نباشه، هر چند که ممکنه اونقدر که خودم ازشون راضی باشم خوب نباشن.
 فعلا این پروژه رو میذارم اینجا بمونه و هر وقت که فرصت شده کارهای زیر رو انجام میدم:
